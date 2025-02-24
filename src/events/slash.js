@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, Collection, REST, Routes } = require('discord.js');
+
+const { Collection, REST, Routes } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const ascii = require('ascii-table');
@@ -7,167 +8,155 @@ const chokidar = require('chokidar');
 module.exports = (client) => {
     // Configuration
     const config = {
-        commandsDir: path.join(__dirname, '../slashCommands'), // Directory for slash commands
-        devMode: process.env.NODE_ENV === 'development', // Enable hot-reload in development
-        cooldowns: new Collection() // Cooldowns for slash commands
+        commandsDir: path.join(__dirname, '../slashCommands'),
+        devMode: process.env.NODE_ENV === 'development',
+        cooldowns: new Collection()
     };
 
     // ASCII table for command loading status
-    const table = new ascii('Slash Commands').setHeading('File', 'Status');
+    const table = new ascii('Slash Commands').setHeading('Command', 'Status');
 
     // Collection to store slash commands
     client.slashCommands = new Collection();
 
-    // Helper functions
-    const helpers = {
-        debounce: (func, wait) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func(...args), wait);
-            };
-        }
-    };
-
     // Command validation
     const validateCommand = (command) => {
-        const required = ['data', 'execute'];
-        if (!required.every(prop => command[prop])) {
+        if (!command.data || !command.execute) {
             return false;
         }
         return true;
     };
 
     // Load slash commands
-    const loadCommands = async (directory = config.commandsDir) => {
-        const commandFiles = fs.readdirSync(directory).filter(file => file.endsWith('.js'));
-        
-        for (const file of commandFiles) {
-            const filePath = path.join(directory, file);
-            try {
-                delete require.cache[require.resolve(filePath)];
-                const command = require(filePath);
-                
-                if (validateCommand(command)) {
-                    client.slashCommands.set(command.data.name, command);
-                    table.addRow(file, '🟩 LOADED');
-                } else {
-                    table.addRow(file, '🟥 INVALID STRUCTURE');
+    const loadCommands = async () => {
+        try {
+            const commandFiles = fs.readdirSync(config.commandsDir).filter(file => file.endsWith('.js'));
+            
+            for (const file of commandFiles) {
+                const filePath = path.join(config.commandsDir, file);
+                try {
+                    delete require.cache[require.resolve(filePath)];
+                    const command = require(filePath);
+                    
+                    if (validateCommand(command)) {
+                        client.slashCommands.set(command.data.name, command);
+                        table.addRow(command.data.name, '✅ Loaded');
+                    } else {
+                        table.addRow(file, '❌ Invalid Structure');
+                        console.error(`[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`);
+                    }
+                } catch (error) {
+                    table.addRow(file, '❌ Error');
+                    console.error(`[ERROR] Failed to load command ${file}:`, error);
                 }
-            } catch (error) {
-                console.error(`Error loading command ${file}:`, error);
-                table.addRow(file, '🟥 ERROR');
             }
+        } catch (error) {
+            console.error('[ERROR] Failed to read commands directory:', error);
         }
     };
 
-    // Deploy slash commands globally
+    // Deploy slash commands
     const deployCommands = async () => {
         try {
-            if (!client.user) {
-                throw new Error('Client user is not available. Bot may not be fully ready.');
-            }
-
-            const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-            const body = Array.from(client.slashCommands.values()).map(cmd => cmd.data.toJSON());
+            console.log('[INFO] Started refreshing application (/) commands.');
             
-            await rest.put(Routes.applicationCommands(client.user.id), { body });
-            console.log(`Successfully deployed ${body.length} slash commands.`);
+            const commands = Array.from(client.slashCommands.values()).map(cmd => cmd.data.toJSON());
+            const rest = new REST().setToken(process.env.DISCORD_TOKEN);
+            
+            await rest.put(
+                Routes.applicationCommands(client.user.id),
+                { body: commands }
+            );
+
+            console.log(`[SUCCESS] Successfully reloaded ${commands.length} application (/) commands.`);
         } catch (error) {
-            console.error('Failed to update slash commands:', error);
+            console.error('[ERROR] Failed to reload application commands:', error);
         }
     };
 
-    // Handle cooldowns for slash commands
-    const handleCooldown = (userId, commandName, cooldown) => {
-        const key = `${userId}-${commandName}`;
-        const now = Date.now();
-        const timestamps = config.cooldowns.get(key) || [];
-        const cooldownAmount = cooldown * 1000;
+    // Handle cooldowns
+    const handleCooldown = (interaction, command) => {
+        if (!command.cooldown) return false;
 
-        const validTimestamps = timestamps.filter(ts => now - ts < cooldownAmount);
-        if (validTimestamps.length > 0) {
-            return validTimestamps[0] + cooldownAmount;
+        const { cooldowns } = config;
+        const key = `${interaction.user.id}-${command.data.name}`;
+        const cooldownAmount = command.cooldown * 1000;
+
+        if (!cooldowns.has(key)) {
+            cooldowns.set(key, Date.now());
+            return false;
         }
 
-        config.cooldowns.set(key, [...validTimestamps, now]);
-        return null;
+        const expirationTime = cooldowns.get(key) + cooldownAmount;
+        if (Date.now() < expirationTime) {
+            const timeLeft = (expirationTime - Date.now()) / 1000;
+            return timeLeft;
+        }
+
+        cooldowns.set(key, Date.now());
+        return false;
     };
 
-    // Execute slash commands
-    const executeSlashCommand = async (interaction) => {
-        if (!interaction.isCommand()) return; // Only handle slash commands
+    // Development mode hot-reload
+    if (config.devMode) {
+        const watcher = chokidar.watch(config.commandsDir, {
+            ignored: /(^|[\/\\])\../,
+            persistent: true
+        });
+
+        watcher
+            .on('add', async () => {
+                await loadCommands();
+                await deployCommands();
+            })
+            .on('change', async () => {
+                await loadCommands();
+                await deployCommands();
+            })
+            .on('unlink', async () => {
+                await loadCommands();
+                await deployCommands();
+            });
+    }
+
+    // Initialize commands when bot is ready
+    client.once('ready', async () => {
+        await loadCommands();
+        await deployCommands();
+        console.log(table.toString());
+    });
+
+    // Handle slash command interactions
+    client.on('interactionCreate', async (interaction) => {
+        if (!interaction.isChatInputCommand()) return;
 
         const command = client.slashCommands.get(interaction.commandName);
         if (!command) return;
 
-        // Handle cooldowns
-        if (command.cooldown) {
-            const remaining = handleCooldown(
-                interaction.user.id,
-                command.data.name,
-                command.cooldown
-            );
-
-            if (remaining) {
+        try {
+            // Check cooldown
+            const cooldownTime = handleCooldown(interaction, command);
+            if (cooldownTime) {
                 return interaction.reply({
-                    content: `Please wait ${command.cooldown} seconds between uses!`,
+                    content: `Please wait ${cooldownTime.toFixed(1)} more seconds before using this command.`,
                     ephemeral: true
                 });
             }
-        }
 
-        // Execute the command
-        try {
+            // Execute command
             await command.execute(interaction);
         } catch (error) {
-            console.error(`Error executing ${interaction.commandName}:`, error);
-            await interaction.reply({
-                content: 'There was an error executing this command!',
+            console.error(`[ERROR] Failed to execute command ${interaction.commandName}:`, error);
+            const reply = {
+                content: 'There was an error while executing this command!',
                 ephemeral: true
-            });
-        }
-    };
+            };
 
-    // Hot-reload in development
-    if (config.devMode) {
-        let isBotReady = false; // Track if the bot is ready
-
-        const watcher = chokidar.watch(config.commandsDir, { ignored: /^\./, persistent: true });
-        const reload = helpers.debounce(async () => {
-            if (!isBotReady) {
-                console.log('Bot is not ready yet. Skipping hot-reload.');
-                return;
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(reply);
+            } else {
+                await interaction.reply(reply);
             }
-
-            console.log('Detected changes, reloading slash commands...');
-            client.slashCommands.clear();
-            table.clearRows();
-            await loadCommands();
-            await deployCommands();
-            console.log(table.toString());
-        }, 1000);
-
-        watcher
-            .on('add', reload)
-            .on('change', reload)
-            .on('unlink', reload);
-
-        // Mark bot as ready
-        client.once('ready', () => {
-            isBotReady = true;
-        });
-    }
-
-    // Initialize
-    client.once('ready', async () => {
-        console.log('Bot is ready! Loading slash commands...');
-        await loadCommands();
-        await deployCommands();
-        console.log(table.toString());
-        console.log('Slash command handler initialized!');
+        }
     });
-
-    // Handle interactions (only for slash commands)
-    client.on('interactionCreate', executeSlashCommand);
 };
