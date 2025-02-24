@@ -4,8 +4,7 @@
   "description": "A high-tech moderation bot for Discord servers.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js"
   },
   "keywords": [
     "discord",
@@ -19,19 +18,19 @@
     "ascii-table": "^0.0.9",
     "axios": "^1.7.9",
     "body-parser": "^1.19.0",
+    "canvacord": "^5.2.1",
     "canvas": "^3.1.0",
     "discord-rpc": "^4.0.1",
     "discord.js": "^14.0.0",
     "dotenv": "^16.4.7",
     "express": "^4.17.1",
+    "fs": "0.0.1-security",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.47",
     "mongoose": "^8.9.6",
-    "better-sqlite3": "^7.1.5",
-    "canvacord": "^5.2.1",
-    "fs": "0.0.1-security",
     "node-fetch": "^3.3.2",
     "sharp": "^0.33.5",
+    "uuid": "^8.3.2",
     "winston": "^3.3.3"
   },
   "devDependencies": {
