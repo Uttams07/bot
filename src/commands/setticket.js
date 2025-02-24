@@ -1,5 +1,5 @@
 
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const TicketConfig = require('../database/schemas/ticketConfigSchema');
 
 module.exports = {
@@ -33,7 +33,16 @@ module.exports = {
             .setDescription('Click the button below to create a ticket')
             .setFooter({ text: 'Support Tickets' });
 
-        await ticketChannel.send({ embeds: [embed] });
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('create_ticket')
+                    .setLabel('Create Ticket')
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('🎫')
+            );
+
+        await ticketChannel.send({ embeds: [embed], components: [row] });
         message.reply(`Ticket system has been set up in ${ticketChannel}${logChannel ? ` with logs in ${logChannel}` : ''}`);
     }
 };
