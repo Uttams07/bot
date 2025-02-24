@@ -27,36 +27,35 @@ module.exports = (client) => {
         return true;
     };
 
-    // Load slash commands
+    // Load commands
     const loadCommands = async () => {
-        try {
-            const commandFiles = fs.readdirSync(config.commandsDir).filter(file => file.endsWith('.js'));
-            
-            for (const file of commandFiles) {
-                const filePath = path.join(config.commandsDir, file);
-                try {
-                    delete require.cache[require.resolve(filePath)];
-                    const command = require(filePath);
-                    
-                    if (validateCommand(command)) {
-                        client.slashCommands.set(command.data.name, command);
-                        table.addRow(command.data.name, '✅ Loaded');
-                    } else {
-                        table.addRow(file, '❌ Invalid Structure');
-                        console.error(`[WARNING] The command at ${filePath} is missing required "data" or "execute" property.`);
-                    }
-                } catch (error) {
-                    table.addRow(file, '❌ Error');
-                    console.error(`[ERROR] Failed to load command ${file}:`, error);
+        const files = fs.readdirSync(config.commandsDir).filter(file => file.endsWith('.js'));
+        
+        for (const file of files) {
+            try {
+                delete require.cache[require.resolve(`${config.commandsDir}/${file}`)];
+                const command = require(`${config.commandsDir}/${file}`);
+                
+                if (validateCommand(command)) {
+                    client.slashCommands.set(command.data.name, command);
+                    table.addRow(file, '✅');
+                } else {
+                    table.addRow(file, '❌');
                 }
+            } catch (error) {
+                table.addRow(file, '❌');
+                console.error(`Error loading command ${file}:`, error);
             }
-        } catch (error) {
-            console.error('[ERROR] Failed to read commands directory:', error);
         }
     };
 
     // Deploy slash commands
     const deployCommands = async () => {
+        if (!client.user) {
+            console.log('[WARNING] Client not ready, skipping command deployment');
+            return;
+        }
+
         try {
             console.log('[INFO] Started refreshing application (/) commands.');
             
@@ -107,15 +106,15 @@ module.exports = (client) => {
         watcher
             .on('add', async () => {
                 await loadCommands();
-                await deployCommands();
+                if (client.isReady()) await deployCommands();
             })
             .on('change', async () => {
                 await loadCommands();
-                await deployCommands();
+                if (client.isReady()) await deployCommands();
             })
             .on('unlink', async () => {
                 await loadCommands();
-                await deployCommands();
+                if (client.isReady()) await deployCommands();
             });
     }
 
@@ -134,7 +133,6 @@ module.exports = (client) => {
         if (!command) return;
 
         try {
-            // Check cooldown
             const cooldownTime = handleCooldown(interaction, command);
             if (cooldownTime) {
                 return interaction.reply({
@@ -143,20 +141,13 @@ module.exports = (client) => {
                 });
             }
 
-            // Execute command
             await command.execute(interaction);
         } catch (error) {
-            console.error(`[ERROR] Failed to execute command ${interaction.commandName}:`, error);
-            const reply = {
+            console.error(error);
+            await interaction.reply({
                 content: 'There was an error while executing this command!',
                 ephemeral: true
-            };
-
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(reply);
-            } else {
-                await interaction.reply(reply);
-            }
+            }).catch(console.error);
         }
     });
 };
