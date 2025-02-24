@@ -29,9 +29,13 @@ module.exports = (client) => {
 
     // Load commands
     const loadCommands = async () => {
-        const files = fs.readdirSync(config.commandsDir).filter(file => file.endsWith('.js'));
+        client.slashCommands.clear(); // Clear existing commands
+        table.clearRows(); // Clear the table
         
-        for (const file of files) {
+        const files = fs.readdirSync(config.commandsDir).filter(file => file.endsWith('.js'));
+        const uniqueFiles = [...new Set(files)]; // Remove duplicates
+        
+        for (const file of uniqueFiles) {
             try {
                 delete require.cache[require.resolve(`${config.commandsDir}/${file}`)];
                 const command = require(`${config.commandsDir}/${file}`);
