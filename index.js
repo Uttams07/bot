@@ -44,7 +44,9 @@ client.login(process.env.DISCORD_TOKEN)
     const guildMemberAddHandler = require('./src/events/guildMemberAdd');
     const readyHandler = require('./src/events/ready');
     const imagesenderHandler = require('./src/events/imagesender');
+    const keepAlive = require('./server');
     
+
     // Load environment variables from .env file
     dotenv.config();
     
@@ -61,7 +63,7 @@ client.login(process.env.DISCORD_TOKEN)
     
     // Connect to MongoDB
     connectDB(); // Call the function to connect to the database
-    
+    keepAlive();
     // Event handlers
     miscHandler(client);
     prefixCommandsHandler(client);

@@ -7,7 +7,7 @@ module.exports = {
     description: 'Work to earn money',
     async execute(message) {
         const cooldown = 30 * 60 * 1000; // 30 minutes
-        const reward = Math.floor(Math.random() * 50) + 50; // 50-100 coins
+        const reward = Math.floor(Math.random() * 200) + 50; // 50-250 coins
         
         let economy = await Economy.findOne({ userId: message.author.id });
         if (!economy) economy = await Economy.create({ userId: message.author.id });

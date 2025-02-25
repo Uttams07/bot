@@ -6,7 +6,7 @@ module.exports = {
     category: 'Economy',
     description: 'Collect daily rewards',
     async execute(message) {
-        const reward = 100;
+        const reward = 1000;
         const cooldown = 24 * 60 * 60 * 1000; // 24 hours
         
         let economy = await Economy.findOne({ userId: message.author.id });
