@@ -1,7 +1,8 @@
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const messageHandler = require('./src/events/message');// Adjust the path as necessary
+const prefixHandler = require('./src/events/prefix');
+const slashHandler = require('./src/events/slash');// Adjust the path as necessary
 const readyHandler = require('./src/events/ready');
 
 // Load environment variables from .env file
@@ -20,8 +21,8 @@ const client = new Client({
 
 
 // Event handlers
-messageHandler(client);
-guildMemberAddHandler(client);
+prefixHandler(client);
+slashHandler(client);
 readyHandler(client);
 
 // Log in to Discord

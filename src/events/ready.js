@@ -1,25 +1,35 @@
-const client = require("../../index.js");
-const ms = require("ms");
+const { Routes } = require('discord.js');
+const { REST } = require('@discordjs/rest');
+const fs = require('fs');
+const path = require('path');
 
-module.exports = (client) => {
+module.exports = async (client) => {
+    const commands = [];
+    const commandsPath = path.join(__dirname, '../../slashCommands');
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const command = require(path.join(commandsPath, file));
+        commands.push(command.data.toJSON());
+    }
+
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
     client.once('ready', async () => {
-        console.log(`[CLIENT] ${client.user.tag} is up and ready to go! Watching ${client.guilds.cache.size} servers and ${client.users.cache.size} users.`);
-  
-        const up = ms(ms(Math.round(process.uptime() - (client.uptime / 1000)) + ' seconds'));
-        console.log(`[NODEJS] Your IDE took ${up} to load and connect to the bot.`);
+        try {
+            console.log(`Started refreshing ${commands.length} application (/) commands.`);
+            
+            await rest.put(
+                Routes.applicationCommands(client.user.id),
+                { body: commands }
+            );
 
-        // Set the bot's activity
-        const activityType = 'STREAMING'; // Change this as needed ('WATCHING', 'LISTENING', etc.)
-        const activityText = 'Join us at Love Cafe!';
-        const streamURL = 'https://discord.gg/loverzz'; // Required for streaming
-
-        if (activityType === 'PLAYING' || activityType === 'STREAMING') {
-            client.user.setActivity(activityText/*, { type: activityType, url: streamURL }*/);
-        } else {
-            client.user.setActivity(activityText, { type: activityType });
+            console.log(`Successfully reloaded application (/) commands.`);
+            console.log(`Logged in as ${client.user.tag}!`);
+            
+            client.user.setActivity('with discord-bots', { type: 'PLAYING' });
+        } catch (error) {
+            console.error(error);
         }
-
-        // Set the bot's status to 'idle'
-        client.user.setStatus('idle'); // Other options: 'online', 'dnd', 'invisible'
     });
 };
