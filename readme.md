@@ -46,6 +46,8 @@ touch app.py static/style.css static/app.js templates/index.html
 ## File Structure
 
 ```
+
+```
 weather-app/
 ├── app.py              # Backend Flask server
 ├── static/
@@ -54,7 +56,7 @@ weather-app/
 ├── templates/
 │   └── index.html     # Main HTML page
 └── README.md          # Documentation
-
+```
 
 ## Installation
 
