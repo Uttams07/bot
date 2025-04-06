@@ -34,20 +34,16 @@ python -m venv venv
 
 # Activate (Windows):
 .\venv\Scripts\activate
+## Installation
 
-# Install packages
+# Install required packages
 pip install flask requests
 
-mkdir weather-app
-cd weather-app
-mkdir static templates
-touch app.py static/style.css static/app.js templates/index.html
+# Verify installations
+python --version
+pip show flask requests 
 
 ## File Structure
-
-```
-
-```
 weather-app/
 ├── app.py              # Backend Flask server
 ├── static/
@@ -57,15 +53,6 @@ weather-app/
 │   └── index.html     # Main HTML page
 └── README.md          # Documentation
 ```
-
-## Installation
-
-# Install required packages
-```pip install flask requests```
-
-# Verify installations
-```python --version```
-```pip show flask requests ```
 
 ## Configuration
 
@@ -115,7 +102,7 @@ Access the app at: http://localhost:5000
 ## License
 
 This project is open-source under the MIT License.
-created by Pratik
+Created by : Pratik-Verma
 
 ## Credits
 
