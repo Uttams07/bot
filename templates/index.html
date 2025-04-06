@@ -1,0 +1,103 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Forecast</h1>
+        <form method="POST">
+            <input type="text" name="city" placeholder="Enter city" required>
+            <button type="submit">Get Weather</button>
+        </form>
+
+        {% if weather %}
+            <div class="weather-box">
+                {% if weather.error %}
+                    <p style="color:red;">{{ weather.error }}</p>
+                {% else %}
+                    <h2>{{ weather.city }}</h2>
+                    <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="Weather Icon">
+                    <p class="temp">{{ weather.temperature }}°C</p>
+                    <p class="desc">{{ weather.description }}</p>
+                    <p><strong>Humidity:</strong> {{ weather.humidity }}%</p>
+                    <p><strong>Pressure:</strong> {{ weather.pressure }} hPa</p>
+                    <p><strong>Wind Speed:</strong> {{ weather.wind_speed }} m/s</p>
+                {% endif %}
+            </div>
+
+            
+            {% if forecast %}
+                <div class="forecast-box">
+                    <h2>7-Day Forecast</h2>
+                    <div class="forecast-grid">
+                        {% for day in forecast %}
+                            <div class="forecast-item">
+                                <p>{{ day.date }}</p>
+                                <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" alt="Weather Icon">
+                                <p class="temp">{{ day.temp }}°C</p>
+                                <p class="desc">{{ day.description }}</p>
+                                <p><strong>Humidity:</strong> {{ day.humidity }}%</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Weather Forecast</h1>
+            <div class="search-container">
+                <input type="text" id="city-input" placeholder="Enter city name">
+                <button id="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+        </header>
+
+        <main>
+            <section class="current-weather">
+                <div class="weather-header">
+                    <h2 id="current-city">--</h2>
+                    <div id="current-description">--</div>
+                </div>
+                <div class="weather-main">
+                    <div id="current-icon"><i class="fas fa-sun"></i></div>
+                    <div id="current-temp">--°C</div>
+                </div>
+                <div class="weather-details">
+                    <div><i class="fas fa-temperature-low"></i> Feels: <span id="feels-like">--°C</span></div>
+                    <div><i class="fas fa-tint"></i> Humidity: <span id="humidity">--%</span></div>
+                    <div><i class="fas fa-wind"></i> Wind: <span id="wind-speed">-- km/h</span></div>
+                    <div><i class="fas fa-sun"></i> Sunrise: <span id="sunrise">--:--</span></div>
+                    <div><i class="fas fa-moon"></i> Sunset: <span id="sunset">--:--</span></div>
+                </div>
+            </section>
+
+            <section class="forecast">
+                <h2>5-Day Forecast</h2>
+                <div id="forecast-items" class="forecast-items">
+                    <!-- Forecast items will be inserted here by JavaScript -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
