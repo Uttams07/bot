@@ -60,15 +60,12 @@ weather-app/
 
 ## Installation
 
-
 # Install required packages
-pip install flask requests
+```pip install flask requests```
 
 # Verify installations
-python --version
-
-pip show flask requests
-
+```python --version```
+```pip show flask requests ```
 
 ## Configuration
 
